@@ -1,0 +1,19 @@
+[package]
+name = "three-set-compare"
+version = "0.1.0"
+authors = ["Max Frai <me@maxfrai.com>"]
+edition = "2018"
+
+description = "Compare two strings similarity with three set algorithm"
+keywords = ["similarity", "string", "language", "nlp"]
+categories = ["text-processing"]
+license-file = "LICENSE"
+readme = "README.md"
+repository = "https://github.com/max-frai/three-set-compare"
+
+[dependencies]
+unidecode = "0.3"
+hashbrown = "0.1"
+
+[dev-dependencies]
+assert_approx_eq = "1.1"
