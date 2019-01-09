@@ -9,7 +9,7 @@ keywords = ["similarity", "string", "language", "nlp"]
 categories = ["text-processing"]
 license-file = "LICENSE"
 readme = "README.md"
-repository = "https://github.com/max-frai/three-set-compare"
+repository = "https://github.com/max-frai/three-set-compare-rs"
 
 [dependencies]
 unidecode = "0.3"
