@@ -1,6 +1,6 @@
 [package]
 name = "three-set-compare"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Max Frai <me@maxfrai.com>"]
 edition = "2018"
 

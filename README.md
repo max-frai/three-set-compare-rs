@@ -18,13 +18,17 @@ It's not optimized for now, but should be very cheap in future.
 Benchmark
 ---
 
-    test tests::bench_add_two ... bench:      71,388 ns/iter (+/- 4,253)
+MacBook Pro (15-inch, 2017), 2.9 GHz Intel Core i7
+
+    test tests::bench_similarity ... bench: 30,278 ns/iter (+/- 2,312)
 
 Usage
 --
     use three_set_compare::ThreeSetCompare;
     let comparator = ThreeSetCompare::new();
-    let similarity = comparator.similarity("First phrase", "Second phrase");
+
+    // 1.0
+    let similarity = comparator.similarity("First phrase here!", "Here firts phrase");
 
 License
 ---

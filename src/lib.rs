@@ -3,20 +3,27 @@ extern crate test;
 
 use hashbrown::HashMap;
 use unidecode::unidecode;
-
-type CharMap = HashMap<char, i32>;
+use std::cell::RefCell;
 
 pub struct ThreeSetCompare {
     alphabet: Vec<char>,
     minimum_word_len: i32,
     delta_word_len_ignore: usize,
     min_word_similarity: f64,
+    left_chars: RefCell<CharMap>,
+    right_chars: RefCell<CharMap>
+}
+
+type CharMap = HashMap<char, i32>;
+
+enum Word {
+    Left,
+    Right
 }
 
 impl ThreeSetCompare {
     pub fn new() -> ThreeSetCompare {
         let alphabet = (b'a'..=b'z')
-            .chain(b'A'..=b'Z')
             .chain(b'0'..=b'9')
             .map(|c| c as char)
             .collect::<Vec<_>>();
@@ -24,24 +31,31 @@ impl ThreeSetCompare {
         let minimum_word_len = 2_i32;
         let delta_word_len_ignore = 3_usize;
         let min_word_similarity = 0.707_f64;
+        let average_word_length = 20;
 
         ThreeSetCompare {
             alphabet,
             minimum_word_len,
             delta_word_len_ignore,
             min_word_similarity,
+
+            left_chars: RefCell::new(CharMap::with_capacity(average_word_length)),
+            right_chars: RefCell::new(CharMap::with_capacity(average_word_length))
         }
     }
 
     #[inline(always)]
-    fn count_chars(&self, data: &str) -> CharMap {
-        let mut result: CharMap = HashMap::with_capacity(data.chars().count());
+    fn count_chars(&self, data: &str, pos: Word) {
+        let mut result = match pos {
+            Word::Left => self.left_chars.borrow_mut(),
+            Word::Right => self.right_chars.borrow_mut()
+        };
 
-        for letter in data.to_lowercase().chars() {
+        result.clear();
+
+        for letter in data.chars() {
             *result.entry(letter).or_insert(0) += 1;
         }
-
-        result
     }
 
     #[inline(always)]
@@ -72,8 +86,11 @@ impl ThreeSetCompare {
                         equality += 1;
                     }
                 } else {
-                    let first_map = self.count_chars(first_word);
-                    let second_map = self.count_chars(second_word);
+                    self.count_chars(first_word, Word::Left);
+                    self.count_chars(second_word, Word::Right);
+
+                    let first_map = self.left_chars.borrow();
+                    let second_map = self.right_chars.borrow();
 
                     let total_length = first_map
                         .iter()
@@ -127,7 +144,7 @@ mod tests {
     use test::Bencher;
 
     #[bench]
-    fn bench_add_two(b: &mut Bencher) {
+    fn bench_similarity(b: &mut Bencher) {
         let comparator = ThreeSetCompare::new();
         b.iter(|| {
             comparator.similarity(
