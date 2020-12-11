@@ -2,23 +2,26 @@
 extern crate test;
 
 use hashbrown::HashMap;
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex},
+};
 use unidecode::unidecode;
-use std::cell::RefCell;
 
 pub struct ThreeSetCompare {
     alphabet: Vec<char>,
     minimum_word_len: i32,
     delta_word_len_ignore: usize,
     min_word_similarity: f64,
-    left_chars: RefCell<CharMap>,
-    right_chars: RefCell<CharMap>
+    left_chars: Arc<Mutex<CharMap>>,
+    right_chars: Arc<Mutex<CharMap>>,
 }
 
 type CharMap = HashMap<char, i32>;
 
 enum Word {
     Left,
-    Right
+    Right,
 }
 
 impl ThreeSetCompare {
@@ -39,16 +42,16 @@ impl ThreeSetCompare {
             delta_word_len_ignore,
             min_word_similarity,
 
-            left_chars: RefCell::new(CharMap::with_capacity(average_word_length)),
-            right_chars: RefCell::new(CharMap::with_capacity(average_word_length))
+            left_chars: Arc::new(Mutex::new(CharMap::with_capacity(average_word_length))),
+            right_chars: Arc::new(Mutex::new(CharMap::with_capacity(average_word_length))),
         }
     }
 
     #[inline(always)]
     fn count_chars(&self, data: &str, pos: Word) {
         let mut result = match pos {
-            Word::Left => self.left_chars.borrow_mut(),
-            Word::Right => self.right_chars.borrow_mut()
+            Word::Left => self.left_chars.lock().unwrap(),
+            Word::Right => self.right_chars.lock().unwrap(),
         };
 
         result.clear();
@@ -89,8 +92,8 @@ impl ThreeSetCompare {
                     self.count_chars(first_word, Word::Left);
                     self.count_chars(second_word, Word::Right);
 
-                    let first_map = self.left_chars.borrow();
-                    let second_map = self.right_chars.borrow();
+                    let first_map = self.left_chars.lock().unwrap();
+                    let second_map = self.right_chars.lock().unwrap();
 
                     let total_length = first_map
                         .iter()
@@ -149,7 +152,7 @@ mod tests {
         b.iter(|| {
             comparator.similarity(
                 "Сравнеие двух строк с помощью инвариантной метрики",
-                "Сравнеие двух строк с помощью метрики, инвариантной к перестановке слов"
+                "Сравнеие двух строк с помощью метрики, инвариантной к перестановке слов",
             );
         });
     }
@@ -161,40 +164,61 @@ mod tests {
     fn differences() {
         let comparator = ThreeSetCompare::new();
 
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение трех строк с помощью инвариантной метрики",
-            "Сравнение двух строк с помощью инвариантной метрики"
-        ), 0.8333333_f64);
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение трех строк   помощью инвариантной метрики",
-            "Сравнение двух строк с помощью инвариантной метрики"
-        ), 0.8333333_f64);
-        assert_approx_eq!(comparator.similarity(
-            "Сравнеие двух строк с помощью инвариантной метрики",
-            "Сравнеие двух строк с помощью метрики, инвариантной к перестановке слов"
-        ), 0.8571428_f64);
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение трех строк с помощью инвариантной метрики",
+                "Сравнение двух строк с помощью инвариантной метрики"
+            ),
+            0.8333333_f64
+        );
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение трех строк   помощью инвариантной метрики",
+                "Сравнение двух строк с помощью инвариантной метрики"
+            ),
+            0.8333333_f64
+        );
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнеие двух строк с помощью инвариантной метрики",
+                "Сравнеие двух строк с помощью метрики, инвариантной к перестановке слов"
+            ),
+            0.8571428_f64
+        );
     }
 
     #[test]
     fn equal() {
         let comparator = ThreeSetCompare::new();
 
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение двух строк с помощью инвариантной метрики",
-            "Сравнение двух строк с помощью инвариантной метрики"
-        ), 1_f64);
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение двух строк с помощью инвариантной метрики!",
-            "Сравнение двух строк с помощью инвариантной метрики?"
-        ), 1_f64);
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение двху строк с пмоощью инвариатнной метркии",
-            "Сравнение двух строк с помощью инвариантной метрики"
-        ), 1_f64);
-        assert_approx_eq!(comparator.similarity(
-            "Сравнение строк двух с помощью метрики инвариантной",
-            "Сравнение двух строк с помощью инвариантной метрики"
-        ), 1_f64);
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение двух строк с помощью инвариантной метрики",
+                "Сравнение двух строк с помощью инвариантной метрики"
+            ),
+            1_f64
+        );
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение двух строк с помощью инвариантной метрики!",
+                "Сравнение двух строк с помощью инвариантной метрики?"
+            ),
+            1_f64
+        );
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение двху строк с пмоощью инвариатнной метркии",
+                "Сравнение двух строк с помощью инвариантной метрики"
+            ),
+            1_f64
+        );
+        assert_approx_eq!(
+            comparator.similarity(
+                "Сравнение строк двух с помощью метрики инвариантной",
+                "Сравнение двух строк с помощью инвариантной метрики"
+            ),
+            1_f64
+        );
     }
 
     #[test]

@@ -13,7 +13,7 @@ repository = "https://github.com/max-frai/three-set-compare-rs"
 
 [dependencies]
 unidecode = "0.3"
-hashbrown = "0.1"
+hashbrown = "0.9"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
