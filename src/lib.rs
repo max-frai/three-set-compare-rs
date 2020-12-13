@@ -1,6 +1,3 @@
-#![feature(test)]
-extern crate test;
-
 use hashbrown::HashMap;
 use std::{
     cell::RefCell,
